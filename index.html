@@ -548,9 +548,8 @@ document.getElementById('navChat').addEventListener('click', () => showView('cha
 
 // ---------- Suggestions (admin-posted signals, Firebase) ----------
 // Only the app owner posts here. A simple PIN gates the form (client-side only —
-// it stops casual users, it is not real security). Default PIN 1234; change
-// ADMIN_PIN in the source to change it.
-const ADMIN_PIN = '1234';
+// it stops casual users, it is not real security). PIN chosen by the owner.
+const ADMIN_PIN = '970014365970014365';
 let sgRef = null;
 function renderSuggest() {
   const list = document.getElementById('suggestList');
