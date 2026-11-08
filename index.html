@@ -7,20 +7,25 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>مبدل ارز — قیمت لحظه‌ای</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>مبدل ارز</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: #0d1117; color: #e6edf3; font-family: Tahoma, 'Segoe UI', sans-serif; padding: 16px; max-width: 560px; margin: 0 auto; }
-  h1 { font-size: 20px; text-align: center; margin: 8px 0 4px; }
-  .sub { text-align: center; color: #8b949e; font-size: 12px; margin-bottom: 16px; }
-  .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  h1 { font-size: 22px; text-align: center; margin: 10px 0 18px; }
+  .grid-coins { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  .coin { background: #161b22; border: 1px solid #30363d; border-radius: 16px; padding: 14px 12px; text-align: center; }
+  .coin .name { font-size: 14px; color: #c9d1d9; }
+  .coin .sym { font-size: 11px; color: #8b949e; direction: ltr; }
+  .coin .usd { font-size: 19px; font-weight: bold; direction: ltr; margin-top: 8px; }
+  .coin .tmn { font-size: 12px; color: #8b949e; margin-top: 4px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 16px; padding: 14px; margin-bottom: 12px; }
   .card h2 { font-size: 15px; margin-bottom: 10px; color: #f0b90b; }
   .row { display: flex; justify-content: space-between; align-items: center; padding: 9px 2px; border-bottom: 1px solid #21262d; font-size: 15px; }
   .row:last-child { border-bottom: none; }
   .row .name { color: #c9d1d9; }
-  .row .name small { color: #8b949e; font-size: 11px; display: block; }
   .row .price { font-weight: bold; direction: ltr; text-align: left; }
-  .row .price small { display: block; font-weight: normal; color: #8b949e; font-size: 11px; }
   label { display: block; font-size: 13px; color: #8b949e; margin: 8px 0 4px; }
   input, select { width: 100%; background: #0d1117; color: #e6edf3; border: 1px solid #30363d; border-radius: 8px; padding: 11px; font-size: 16px; font-family: inherit; }
   input:focus, select:focus { outline: none; border-color: #f0b90b; }
@@ -29,22 +34,14 @@
   #resultFa { font-size: 14px; color: #8b949e; text-align: center; padding-bottom: 6px; }
   button { width: 100%; background: #f0b90b; color: #111; border: none; border-radius: 8px; padding: 12px; font-size: 15px; font-weight: bold; font-family: inherit; cursor: pointer; margin-top: 10px; }
   button:active { opacity: .8; }
-  .warn { background: #3d2c00; border: 1px solid #7a5c00; color: #ffd479; border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.8; margin-bottom: 12px; }
   .meta { text-align: center; color: #8b949e; font-size: 11px; line-height: 1.8; margin-top: 12px; }
   .err { color: #ff7b72; text-align: center; font-size: 12px; padding: 6px; }
 </style>
 </head>
 <body>
   <h1>💱 مبدل ارز</h1>
-  <p class="sub">قیمت لحظه‌ای ارز دیجیتال و فیات — بدون سرور، مستقیم از گوشی — نسخه ۴</p>
-  <p class="meta" id="diag">در حال تست منابع…</p>
 
-  <div class="warn">⚠️ نرخ تومان بستگی به منبع دارد: اگر از ExchangeRate-API یا jsDelivr بیاید <b>رسمی</b> است، اگر از Nobitex بیاید <b>بازار آزاد</b> است. منبع هر بخش پایین صفحه نوشته شده.</div>
-
-  <div class="card">
-    <h2>🪙 ارز دیجیتال (دلار)</h2>
-    <div id="crypto"><p class="err">در حال دریافت قیمت‌ها…</p></div>
-  </div>
+  <div class="grid-coins" id="crypto"><p class="err">در حال دریافت قیمت‌ها…</p></div>
 
   <div class="card">
     <h2>💵 فیات (هر ۱ دلار = …)</h2>
@@ -71,7 +68,6 @@
   </div>
 
   <p class="meta" id="meta">—</p>
-  <p class="meta">ساخته‌شده با CoinGecko و ExchangeRate-API — هر دو رایگان و بدون کلید.<br>برای نصب مثل اپ: در مرورگر اندروید ⋮ ← «Add to Home screen»</p>
 
 <script>
 const CRYPTOS = [
@@ -89,7 +85,7 @@ const FIATS = [
   { code: 'GBP', fa: 'پوند' },
   { code: 'AED', fa: 'درهم امارات' },
   { code: 'TRY', fa: 'لیر ترکیه' },
-  { code: 'IRR', fa: 'تومان (رسمی)' },
+  { code: 'IRR', fa: 'تومان' },
 ];
 // prices in USD per 1 unit; fiat rates: units per 1 USD (IRR stored per USD, shown as تومان = IRR/10)
 let usdPrice = {};   // crypto symbol -> USD
@@ -110,8 +106,9 @@ function renderCrypto() {
   c.innerHTML = CRYPTOS.map(x => {
     const p = usdPrice[x.sym];
     const toman = p && fiatPerUsd.IRR ? p * fiatPerUsd.IRR / 10 : null;
-    return `<div class="row"><span class="name">${x.fa} <small>${x.sym}</small></span>
-      <span class="price">${p ? '$' + enNum(p, p < 1 ? 4 : 2) : '—'}${toman ? `<small>≈ ${faNum(toman, 0)} تومان</small>` : ''}</span></div>`;
+    return `<div class="coin"><div class="name">${x.fa}</div><div class="sym">${x.sym}</div>
+      <div class="usd">${p ? '$' + enNum(p, p < 1 ? 4 : 2) : '—'}</div>
+      ${toman ? `<div class="tmn">≈ ${faNum(toman, 0)} تومان</div>` : ''}</div>`;
   }).join('');
 }
 function renderFiat() {
@@ -157,100 +154,78 @@ async function fetchJSON(url, ms = 10000) {
     return await r.json();
   } finally { clearTimeout(t); }
 }
-// Live per-source status line, so a blocked source is visible on screen.
-const diagState = {};
-function setDiag(name, state) {
-  diagState[name] = state;
-  const el = document.getElementById('diag');
-  if (el) el.textContent = 'منابع: ' + Object.entries(diagState).map(([k, v]) => k + ' ' + v).join('  |  ');
-}
 // Crypto: CoinGecko -> CoinLore -> Nobitex (Iranian exchange, reachable without VPN).
 async function loadCrypto() {
-  setDiag('CoinGecko', '⏳');
   try {
     const cg = await fetchJSON('https://api.coingecko.com/api/v3/simple/price?ids=' + CRYPTOS.map(c => c.id).join(',') + '&vs_currencies=usd');
     let ok = false;
     CRYPTOS.forEach(x => { if (cg[x.id] && cg[x.id].usd) { usdPrice[x.sym] = cg[x.id].usd; ok = true; } });
-    if (ok) { setDiag('CoinGecko', '✅'); return 'CoinGecko'; }
+    if (ok) return 'CoinGecko';
     throw new Error('empty');
-  } catch (e) { setDiag('CoinGecko', '❌'); }
-  setDiag('CoinLore', '⏳');
+  } catch (e) { /* fall through */ }
   try {
     const cl = await fetchJSON('https://api.coinlore.net/api/tickers/?start=0&limit=20');
     let ok = false;
     (cl.data || []).forEach(x => { if (x.symbol && x.price_usd) { usdPrice[x.symbol] = parseFloat(x.price_usd); ok = true; } });
-    if (ok) { setDiag('CoinLore', '✅'); return 'CoinLore'; }
+    if (ok) return 'CoinLore';
     throw new Error('empty');
-  } catch (e) { setDiag('CoinLore', '❌'); }
-  setDiag('Nobitex', '⏳');
-  try {
-    const coins = CRYPTOS.filter(x => x.sym !== 'USDT');
-    await Promise.allSettled(coins.map(x =>
-      fetchJSON('https://api.nobitex.ir/market/stats?srcCurrency=' + x.sym.toLowerCase() + '&dstCurrency=usdt').then(j => {
-        const s = j.stats && j.stats[x.sym.toLowerCase() + '-usdt'];
-        if (s && s.latest) usdPrice[x.sym] = parseFloat(s.latest);
-      })));
-    usdPrice.USDT = 1;
-    if (coins.some(x => usdPrice[x.sym])) { setDiag('Nobitex', '✅'); return 'Nobitex'; }
-    throw new Error('empty');
-  } catch (e) { setDiag('Nobitex', '❌'); throw new Error('all crypto sources failed'); }
+  } catch (e) { /* fall through */ }
+  const coins = CRYPTOS.filter(x => x.sym !== 'USDT');
+  await Promise.allSettled(coins.map(x =>
+    fetchJSON('https://api.nobitex.ir/market/stats?srcCurrency=' + x.sym.toLowerCase() + '&dstCurrency=usdt').then(j => {
+      const s = j.stats && j.stats[x.sym.toLowerCase() + '-usdt'];
+      if (s && s.latest) usdPrice[x.sym] = parseFloat(s.latest);
+    })));
+  usdPrice.USDT = 1;
+  if (coins.some(x => usdPrice[x.sym])) return 'Nobitex';
+  throw new Error('all crypto sources failed');
 }
 // Fiat: ExchangeRate-API -> jsDelivr -> allorigins proxy -> Nobitex USDT/RLS (bazaar rate, IRR only).
 async function loadFiat() {
-  setDiag('er-api', '⏳');
   try {
     const er = await fetchJSON('https://open.er-api.com/v6/latest/USD');
     if (er && er.rates) {
       FIATS.forEach(x => { if (er.rates[x.code]) fiatPerUsd[x.code] = er.rates[x.code]; });
       lastUpdate = er.time_last_update_utc || new Date().toUTCString();
-      setDiag('er-api', '✅');
       return 'ExchangeRate-API';
     }
     throw new Error('empty');
-  } catch (e) { setDiag('er-api', '❌'); }
-  setDiag('jsDelivr', '⏳');
+  } catch (e) { /* fall through */ }
   try {
     const j = await fetchJSON('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json');
     const r = j.usd || {};
     FIATS.forEach(x => { const v = r[x.code.toLowerCase()]; if (v) fiatPerUsd[x.code] = v; });
     lastUpdate = j.date || new Date().toUTCString();
-    setDiag('jsDelivr', '✅');
     return 'jsDelivr';
-  } catch (e) { setDiag('jsDelivr', '❌'); }
-  setDiag('allorigins', '⏳');
+  } catch (e) { /* fall through */ }
   try {
     const er2 = await fetchJSON('https://api.allorigins.win/raw?url=' + encodeURIComponent('https://open.er-api.com/v6/latest/USD'));
     if (er2 && er2.rates) {
       FIATS.forEach(x => { if (er2.rates[x.code]) fiatPerUsd[x.code] = er2.rates[x.code]; });
       lastUpdate = er2.time_last_update_utc || new Date().toUTCString();
-      setDiag('allorigins', '✅');
       return 'allorigins';
     }
     throw new Error('empty');
-  } catch (e) { setDiag('allorigins', '❌'); }
-  setDiag('Nobitex', '⏳');
-  try {
-    const nb = await fetchJSON('https://api.nobitex.ir/market/stats?srcCurrency=usdt&dstCurrency=rls');
-    const s = nb.stats && nb.stats['usdt-rls'];
-    if (s && s.latest) {
-      fiatPerUsd.IRR = parseFloat(s.latest);
-      lastUpdate = new Date().toUTCString();
-      setDiag('Nobitex', '✅');
-      return 'Nobitex (بازار آزاد)';
-    }
-    throw new Error('empty');
-  } catch (e) { setDiag('Nobitex', '❌'); throw new Error('all fiat sources failed'); }
+  } catch (e) { /* fall through */ }
+  const nb = await fetchJSON('https://api.nobitex.ir/market/stats?srcCurrency=usdt&dstCurrency=rls');
+  const s = nb.stats && nb.stats['usdt-rls'];
+  if (s && s.latest) {
+    fiatPerUsd.IRR = parseFloat(s.latest);
+    lastUpdate = new Date().toUTCString();
+    return 'Nobitex (بازار آزاد)';
+  }
+  throw new Error('all fiat sources failed');
 }
 async function refresh() {
   const box = document.getElementById('crypto'), fbox = document.getElementById('fiat');
   const [cRes, fRes] = await Promise.allSettled([loadCrypto(), loadFiat()]);
   if (cRes.status === 'fulfilled') renderCrypto();
-  else box.innerHTML = '<p class="err">خطا در دریافت قیمت کریپتو — هر دو منبع در دسترس نیست. اینترنت/VPN را چک کن و «به‌روزرسانی» را بزن.</p>';
+  else box.innerHTML = '<p class="err">خطا در دریافت قیمت کریپتو — اینترنت را چک کن و «به‌روزرسانی» را بزن.</p>';
   if (fRes.status === 'fulfilled') renderFiat();
-  else fbox.innerHTML = '<p class="err">خطا در دریافت نرخ فیات — هر دو منبع در دسترس نیست.</p>';
+  else fbox.innerHTML = '<p class="err">خطا در دریافت نرخ فیات.</p>';
   if (cRes.status === 'fulfilled' || fRes.status === 'fulfilled') {
     localStorage.setItem('arzCache', JSON.stringify({ usdPrice, fiatPerUsd, lastUpdate }));
-    document.getElementById('meta').textContent = 'آخرین به‌روزرسانی: ' + (lastUpdate || '—') + ' — کریپتو: ' + (cRes.status === 'fulfilled' ? cRes.value : 'خطا') + '، فیات: ' + (fRes.status === 'fulfilled' ? fRes.value : 'خطا');
+    document.getElementById('meta').textContent = 'آخرین به‌روزرسانی: ' + (lastUpdate || '—');
     convert();
   } else {
     const cached = localStorage.getItem('arzCache');
