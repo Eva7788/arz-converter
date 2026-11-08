@@ -116,6 +116,7 @@
     <div class="grid-coins" id="fiat"><p class="err">در حال دریافت نرخ‌ها…</p></div>
 
     <p class="meta" id="meta">—</p>
+    <div style="height:90vh"></div>
     <button id="adminLoginBtn" type="button" class="admin-login">🔐 ورود مدیر</button>
   </div>
 
@@ -139,6 +140,7 @@
         <button id="backBtn" type="button">‹ بازگشت</button>
         <span id="roomTitle"></span>
       </div>
+      <p class="meta" id="roomStatus"></p>
       <div id="messages"></div>
       <div class="msg-input">
         <input id="msgInput" type="text" placeholder="پیام بنویس…" maxlength="500">
@@ -154,7 +156,6 @@
       <h2>💡 پیشنهادات</h2>
       <p class="meta" style="text-align:right;margin-top:0">سیگنال‌ها و پیشنهادهای خرید و فروش — مستقیم از مدیر اپ.</p>
       <button id="adminBtn" type="button">➕ ثبت پیشنهاد (مدیر)</button>
-      <button id="suggestLoginBtn" type="button" class="admin-login">🔐 ورود مدیر</button>
       <div id="suggestForm" style="display:none">
         <label>ارز / دارایی</label>
         <select id="sgAsset">
@@ -178,6 +179,8 @@
     </div>
     <div id="suggestList"></div>
     <p class="meta" id="suggestStatus"></p>
+    <div style="height:70vh"></div>
+    <button id="suggestLoginBtn" type="button" class="admin-login">🔐 ورود مدیر</button>
   </div>
 
   <!-- Admin view -->
@@ -512,8 +515,23 @@ function getMsgs(gid) {
 }
 function saveMsgs(gid, arr) { localStorage.setItem('arzChat_' + gid, JSON.stringify(arr.slice(-200))); }
 
+let connRef = null;
 function detachListener() {
   if (currentRef) { currentRef.off('value'); currentRef = null; }
+  if (connRef) { connRef.off('value'); connRef = null; }
+}
+function setRoomStatus() {
+  const el = document.getElementById('roomStatus');
+  if (!el) return;
+  if (!fbReady) {
+    el.textContent = '🔴 آفلاین — پیام‌ها فقط روی همین گوشی ذخیره می‌شن.';
+    return;
+  }
+  if (connRef) connRef.off('value');
+  connRef = fbDb.ref('.info/connected');
+  connRef.on('value', snap => {
+    el.textContent = snap.val() ? '🟢 چت آنلاین' : '🔴 قطع — در حال اتصال دوباره…';
+  });
 }
 function attachListener(gid) {
   detachListener();
@@ -577,6 +595,7 @@ function openGroup(gid) {
   document.getElementById('myNick').textContent = myNick;
   if (fbReady) attachListener(gid);
   renderChat();
+  setRoomStatus();
 }
 function renderRoom(msgs) {
   if (msgs === undefined) msgs = getMsgs(currentGroup);
@@ -613,25 +632,35 @@ async function sendMsg() {
   const inp = document.getElementById('msgInput');
   const text = inp.value.trim();
   if (!text || !currentGroup) return;
+  let sent = false;
   if (fbReady) {
-    // The mute/ban check must never block sending: if the connection is slow,
-    // give up after 4s and send anyway (fail open).
-    const chk = await withTimeout(canChat(myNick).catch(() => ({ ok: true })), 4000, { ok: true });
-    if (!chk.ok) {
-      if (chk.why === 'ban') {
-        alert('دسترسی شما به چت مسدود شده است.');
-      } else {
-        const t = new Date(chk.until);
-        alert('شما تا ' + t.toLocaleDateString('fa-IR') + ' ساعت ' + String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0') + ' ساکت هستی.');
+    try {
+      // The mute/ban check must never block sending: if the connection is slow,
+      // give up after 4s and send anyway (fail open).
+      const chk = await withTimeout(canChat(myNick).catch(() => ({ ok: true })), 4000, { ok: true });
+      if (!chk.ok) {
+        if (chk.why === 'ban') {
+          alert('دسترسی شما به چت مسدود شده است.');
+        } else {
+          const t = new Date(chk.until);
+          alert('شما تا ' + t.toLocaleDateString('fa-IR') + ' ساعت ' + String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0') + ' ساکت هستی.');
+        }
+        return;
       }
-      return;
+      fbDb.ref('chat/' + currentGroup).push({ nick: myNick, text, time: firebase.database.ServerValue.TIMESTAMP });
+      sent = true;
+    } catch (err) {
+      sent = false;
     }
-    fbDb.ref('chat/' + currentGroup).push({ nick: myNick, text, time: firebase.database.ServerValue.TIMESTAMP });
-  } else {
-    const msgs = getMsgs(currentGroup);
-    msgs.push({ nick: myNick, text, time: Date.now() });
-    saveMsgs(currentGroup, msgs);
-    renderRoom();
+  }
+  if (!sent) {
+    // Offline or send failed: save locally so the message shows right away.
+    try {
+      const msgs = getMsgs(currentGroup);
+      msgs.push({ nick: myNick, text, time: Date.now() });
+      saveMsgs(currentGroup, msgs);
+      renderRoom();
+    } catch (e) {}
   }
   inp.value = '';
 }
