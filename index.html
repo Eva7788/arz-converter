@@ -12,7 +12,7 @@
 <title>مبدل ارز</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #f0f0f3; color: #1c1c1e; font-family: Tahoma, 'Segoe UI', sans-serif; padding: 14px; max-width: 560px; margin: 0 auto; }
+  body { background: #f0f0f3; color: #1c1c1e; font-family: Tahoma, 'Segoe UI', sans-serif; padding: 14px 14px 78px; max-width: 560px; margin: 0 auto; }
   h1 { font-size: 20px; text-align: center; margin: 8px 0 14px; }
   h3 { font-size: 13px; color: #8a8a8e; margin: 4px 2px 8px; }
   .grid-coins { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
@@ -39,37 +39,98 @@
   button:active { opacity: .8; }
   .meta { text-align: center; color: #8a8a8e; font-size: 11px; line-height: 1.8; margin-top: 12px; }
   .err { color: #ff3b30; text-align: center; font-size: 12px; padding: 6px; grid-column: 1 / -1; }
+  /* Bottom navigation */
+  #bottomNav { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e5e5ea; display: flex; z-index: 10; padding-bottom: env(safe-area-inset-bottom); }
+  #bottomNav button { flex: 1; background: none; border: none; padding: 12px 0 10px; font-size: 14px; font-family: inherit; color: #8a8a8e; cursor: pointer; margin-top: 0; border-radius: 0; }
+  #bottomNav button.active { color: #111; font-weight: bold; }
+  /* Chat */
+  .gcard { background: #fff; border-radius: 18px; padding: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.08); display: flex; align-items: center; gap: 12px; margin-bottom: 10px; cursor: pointer; }
+  .gicon { font-size: 30px; line-height: 1; flex-shrink: 0; }
+  .gnm { font-size: 15px; font-weight: bold; flex: 1; }
+  .gnm small { display: block; font-size: 12px; font-weight: normal; color: #8a8a8e; margin-top: 2px; }
+  .garrow { color: #c7c7cc; font-size: 20px; }
+  .room-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .room-head button { width: auto; margin-top: 0; padding: 8px 14px; background: #fff; color: #1c1c1e; border: 1px solid #e5e5ea; }
+  .room-head span { font-size: 16px; font-weight: bold; }
+  #messages { background: #fff; border-radius: 18px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); height: 55vh; overflow-y: auto; margin-bottom: 10px; }
+  .msg { margin-bottom: 10px; max-width: 85%; }
+  .msg .mnick { font-size: 11px; color: #8a8a8e; margin-bottom: 2px; }
+  .msg .mnick span { direction: ltr; display: inline-block; }
+  .msg .mtext { background: #f2f2f7; border-radius: 12px; padding: 8px 12px; font-size: 14px; word-wrap: break-word; }
+  .msg.mine { margin-inline-start: auto; }
+  .msg.mine .mtext { background: #fff3c4; }
+  .msg-input { display: flex; gap: 8px; }
+  .msg-input input { flex: 1; }
+  .msg-input button { width: auto; margin-top: 0; padding: 11px 18px; }
+  .linklike { color: #8a8a8e; text-decoration: underline; cursor: pointer; }
 </style>
 </head>
 <body>
   <h1>💱 مبدل ارز</h1>
 
-  <div class="card">
-    <h2>🔄 تبدیل‌کننده</h2>
-    <label>مقدار</label>
-    <input id="amount" type="number" inputmode="decimal" value="1" min="0" step="any">
-    <div class="grid">
-      <div>
-        <label>از</label>
-        <select id="from"></select>
+  <!-- Rates view -->
+  <div id="view-rates">
+    <div class="card">
+      <h2>🔄 تبدیل‌کننده</h2>
+      <label>مقدار</label>
+      <input id="amount" type="number" inputmode="decimal" value="1" min="0" step="any">
+      <div class="grid">
+        <div>
+          <label>از</label>
+          <select id="from"></select>
+        </div>
+        <div>
+          <label>به</label>
+          <select id="to"></select>
+        </div>
       </div>
-      <div>
-        <label>به</label>
-        <select id="to"></select>
-      </div>
+      <div id="result">—</div>
+      <div id="resultFa"></div>
+      <button id="refreshBtn" type="button">🔄 به‌روزرسانی قیمت‌ها</button>
     </div>
-    <div id="result">—</div>
-    <div id="resultFa"></div>
-    <button id="refreshBtn" type="button">🔄 به‌روزرسانی قیمت‌ها</button>
+
+    <h3>ارز دیجیتال</h3>
+    <div class="grid-coins" id="crypto"><p class="err">در حال دریافت قیمت‌ها…</p></div>
+
+    <h3>فیات</h3>
+    <div class="grid-coins" id="fiat"><p class="err">در حال دریافت نرخ‌ها…</p></div>
+
+    <p class="meta" id="meta">—</p>
   </div>
 
-  <h3>ارز دیجیتال</h3>
-  <div class="grid-coins" id="crypto"><p class="err">در حال دریافت قیمت‌ها…</p></div>
+  <!-- Chat view -->
+  <div id="view-chat" style="display:none">
+    <div id="nickSetup" class="card" style="display:none">
+      <h2>👋 اسم شما</h2>
+      <label>برای اولین ورود، یه اسم برای خودت انتخاب کن</label>
+      <input id="nickInput" type="text" placeholder="مثلاً اسماعیل" maxlength="30">
+      <button id="nickSaveBtn" type="button">ذخیره و ورود به چت</button>
+    </div>
 
-  <h3>فیات</h3>
-  <div class="grid-coins" id="fiat"><p class="err">در حال دریافت نرخ‌ها…</p></div>
+    <div id="groupList">
+      <h3>گروه‌ها</h3>
+      <div id="groups"></div>
+    </div>
 
-  <p class="meta" id="meta">—</p>
+    <div id="room" style="display:none">
+      <div class="room-head">
+        <button id="backBtn" type="button">‹ بازگشت</button>
+        <span id="roomTitle"></span>
+      </div>
+      <div id="messages"></div>
+      <div class="msg-input">
+        <input id="msgInput" type="text" placeholder="پیام بنویس…" maxlength="500">
+        <button id="sendBtn" type="button">ارسال</button>
+      </div>
+      <p class="meta">شما: <b id="myNick"></b> — <span class="linklike" id="changeNick">تغییر نام</span></p>
+    </div>
+  </div>
+
+  <!-- Bottom navigation -->
+  <nav id="bottomNav">
+    <button id="navRates" type="button" class="active">💱 ارزها</button>
+    <button id="navChat" type="button">💬 چت</button>
+  </nav>
 
 <script>
 const CRYPTOS = [
@@ -293,6 +354,107 @@ async function refresh() {
     }
   }
 }
+
+// ---------- Chat ----------
+// Messages are stored in this browser only (localStorage) for now — there is no
+// server yet, so other people cannot see them. A free Firebase database is the
+// next step for real multi-user chat; the storage layer below is ready to swap.
+const GROUPS = [
+  { id: 'usd',  name: 'گروه دلار',    icon: '🇺🇸' },
+  { id: 'eur',  name: 'گروه یورو',    icon: '🇪🇺' },
+  { id: 'try',  name: 'گروه لیر',     icon: '🇹🇷' },
+  { id: 'xau',  name: 'گروه طلا',     icon: '🪙' },
+  { id: 'usdt', name: 'گروه تتر',     icon: '💵' },
+  { id: 'btc',  name: 'گروه بیت‌کوین', icon: '🟠' },
+];
+let myNick = localStorage.getItem('arzNick') || '';
+let currentGroup = null;
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function getMsgs(gid) {
+  try { return JSON.parse(localStorage.getItem('arzChat_' + gid) || '[]'); } catch (e) { return []; }
+}
+function saveMsgs(gid, arr) { localStorage.setItem('arzChat_' + gid, JSON.stringify(arr.slice(-200))); }
+
+function showView(v) {
+  document.getElementById('view-rates').style.display = v === 'rates' ? '' : 'none';
+  document.getElementById('view-chat').style.display = v === 'chat' ? '' : 'none';
+  document.getElementById('navRates').classList.toggle('active', v === 'rates');
+  document.getElementById('navChat').classList.toggle('active', v === 'chat');
+  if (v === 'chat') renderChat();
+}
+function renderChat() {
+  const nickBox = document.getElementById('nickSetup');
+  const list = document.getElementById('groupList');
+  const room = document.getElementById('room');
+  if (!myNick) {
+    nickBox.style.display = '';
+    list.style.display = 'none';
+    room.style.display = 'none';
+    return;
+  }
+  nickBox.style.display = 'none';
+  if (!currentGroup) {
+    list.style.display = '';
+    room.style.display = 'none';
+    document.getElementById('groups').innerHTML = GROUPS.map(g => {
+      const n = getMsgs(g.id).length;
+      return `<div class="gcard" data-g="${g.id}"><span class="gicon">${g.icon}</span><span class="gnm">${g.name}<small>${n ? n + ' پیام' : 'گفتگو درباره ' + g.name.replace('گروه ', '')}</small></span><span class="garrow">‹</span></div>`;
+    }).join('');
+    document.querySelectorAll('.gcard').forEach(el => el.addEventListener('click', () => openGroup(el.dataset.g)));
+  } else {
+    list.style.display = 'none';
+    room.style.display = '';
+    renderRoom();
+  }
+}
+function openGroup(gid) {
+  currentGroup = gid;
+  document.getElementById('roomTitle').textContent = GROUPS.find(g => g.id === gid).name;
+  document.getElementById('myNick').textContent = myNick;
+  renderChat();
+}
+function renderRoom() {
+  const msgs = getMsgs(currentGroup);
+  const box = document.getElementById('messages');
+  box.innerHTML = msgs.length ? msgs.map(m => {
+    const mine = m.nick === myNick;
+    const t = new Date(m.time);
+    const hh = String(t.getHours()).padStart(2, '0'), mm = String(t.getMinutes()).padStart(2, '0');
+    return `<div class="msg ${mine ? 'mine' : ''}"><div class="mnick">${esc(m.nick)} <span>${hh}:${mm}</span></div><div class="mtext">${esc(m.text)}</div></div>`;
+  }).join('') : '<p class="meta">هنوز پیامی نیست — اولین پیام رو تو بفرست.</p>';
+  box.scrollTop = box.scrollHeight;
+}
+function sendMsg() {
+  const inp = document.getElementById('msgInput');
+  const text = inp.value.trim();
+  if (!text || !currentGroup) return;
+  const msgs = getMsgs(currentGroup);
+  msgs.push({ nick: myNick, text, time: Date.now() });
+  saveMsgs(currentGroup, msgs);
+  inp.value = '';
+  renderRoom();
+}
+document.getElementById('nickSaveBtn').addEventListener('click', () => {
+  const v = document.getElementById('nickInput').value.trim();
+  if (!v) return;
+  myNick = v;
+  localStorage.setItem('arzNick', v);
+  currentGroup = null;
+  renderChat();
+});
+document.getElementById('changeNick').addEventListener('click', () => {
+  myNick = '';
+  localStorage.removeItem('arzNick');
+  currentGroup = null;
+  renderChat();
+});
+document.getElementById('backBtn').addEventListener('click', () => { currentGroup = null; renderChat(); });
+document.getElementById('sendBtn').addEventListener('click', sendMsg);
+document.getElementById('msgInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
+document.getElementById('navRates').addEventListener('click', () => showView('rates'));
+document.getElementById('navChat').addEventListener('click', () => showView('chat'));
+
 buildSelects();
 ['amount', 'from', 'to'].forEach(id => document.getElementById(id).addEventListener('input', convert));
 document.getElementById('refreshBtn').addEventListener('click', refresh);
