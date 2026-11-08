@@ -63,6 +63,14 @@
   .msg-input input { flex: 1; }
   .msg-input button { width: auto; margin-top: 0; padding: 11px 18px; }
   .linklike { color: #8a8a8e; text-decoration: underline; cursor: pointer; }
+  /* Suggestions */
+  .sg { background: #fff; border-radius: 18px; padding: 12px 14px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 10px; border-inline-start: 4px solid #8a8a8e; }
+  .sg.buy { border-inline-start-color: #34c759; }
+  .sg.sell { border-inline-start-color: #ff3b30; }
+  .sg.warn { border-inline-start-color: #ff9500; }
+  .sg .sg-head { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 4px; }
+  .sg .sg-head span:last-child { color: #8a8a8e; font-weight: normal; font-size: 11px; }
+  .sg .sg-text { font-size: 14px; }
 </style>
 </head>
 <body>
@@ -127,10 +135,42 @@
     </div>
   </div>
 
+  <!-- Suggestions view -->
+  <div id="view-suggest" style="display:none">
+    <div class="card">
+      <h2>💡 پیشنهادات</h2>
+      <p class="meta" style="text-align:right;margin-top:0">سیگنال‌ها و پیشنهادهای خرید و فروش — مستقیم از مدیر اپ.</p>
+      <button id="adminBtn" type="button">➕ ثبت پیشنهاد (مدیر)</button>
+      <div id="suggestForm" style="display:none">
+        <label>ارز / دارایی</label>
+        <select id="sgAsset">
+          <option value="دلار">دلار</option>
+          <option value="یورو">یورو</option>
+          <option value="لیر">لیر</option>
+          <option value="طلا">طلا</option>
+          <option value="تتر">تتر</option>
+          <option value="بیت‌کوین">بیت‌کوین</option>
+        </select>
+        <label>نوع پیشنهاد</label>
+        <select id="sgType">
+          <option value="buy">🟢 خرید — موقعیت خوبه</option>
+          <option value="sell">🔴 فروش — موقعیت خوبه</option>
+          <option value="warn">⚠️ هشدار — نزولی دیده می‌شه</option>
+        </select>
+        <label>متن پیشنهاد</label>
+        <input id="sgText" type="text" placeholder="مثلاً: الان موقعیت خوبیه برای خرید دلار" maxlength="200">
+        <button id="sgSendBtn" type="button">ارسال پیشنهاد</button>
+      </div>
+    </div>
+    <div id="suggestList"></div>
+    <p class="meta" id="suggestStatus"></p>
+  </div>
+
   <!-- Bottom navigation -->
   <nav id="bottomNav">
     <button id="navRates" type="button" class="active">💱 ارزها</button>
     <button id="navChat" type="button">💬 چت</button>
+    <button id="navSuggest" type="button">💡 پیشنهادات</button>
   </nav>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -414,10 +454,14 @@ function attachListener(gid) {
 function showView(v) {
   document.getElementById('view-rates').style.display = v === 'rates' ? '' : 'none';
   document.getElementById('view-chat').style.display = v === 'chat' ? '' : 'none';
+  document.getElementById('view-suggest').style.display = v === 'suggest' ? '' : 'none';
   document.getElementById('navRates').classList.toggle('active', v === 'rates');
   document.getElementById('navChat').classList.toggle('active', v === 'chat');
+  document.getElementById('navSuggest').classList.toggle('active', v === 'suggest');
   if (v === 'rates') detachListener();
   if (v === 'chat') renderChat();
+  if (v === 'suggest') renderSuggest();
+  if (v !== 'suggest' && sgRef) { sgRef.off('value'); sgRef = null; }
 }
 function renderChat() {
   const nickBox = document.getElementById('nickSetup');
@@ -501,6 +545,62 @@ document.getElementById('sendBtn').addEventListener('click', sendMsg);
 document.getElementById('msgInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendMsg(); });
 document.getElementById('navRates').addEventListener('click', () => showView('rates'));
 document.getElementById('navChat').addEventListener('click', () => showView('chat'));
+
+// ---------- Suggestions (admin-posted signals, Firebase) ----------
+// Only the app owner posts here. A simple PIN gates the form (client-side only —
+// it stops casual users, it is not real security). Default PIN 1234; change
+// ADMIN_PIN in the source to change it.
+const ADMIN_PIN = '1234';
+let sgRef = null;
+function renderSuggest() {
+  const list = document.getElementById('suggestList');
+  const status = document.getElementById('suggestStatus');
+  document.getElementById('suggestForm').style.display = localStorage.getItem('arzAdmin') === '1' ? '' : 'none';
+  if (!fbReady) {
+    status.textContent = 'اتصال به سرور برقرار نشد — پیشنهادها فعلاً در دسترس نیست.';
+    list.innerHTML = '';
+    return;
+  }
+  status.textContent = '';
+  if (sgRef) sgRef.off('value');
+  sgRef = fbDb.ref('suggestions').limitToLast(50);
+  sgRef.on('value', snap => {
+    const val = snap.val() || {};
+    const items = Object.values(val).sort((a, b) => (b.time || 0) - (a.time || 0));
+    list.innerHTML = items.length ? items.map(s => {
+      const t = new Date(s.time || Date.now());
+      const label = s.type === 'buy' ? '🟢 خرید' : s.type === 'sell' ? '🔴 فروش' : '⚠️ هشدار';
+      const when = t.toLocaleDateString('fa-IR') + ' ' + String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
+      return `<div class="sg ${s.type}"><div class="sg-head"><span>${label} ${esc(s.asset || '')}</span><span>${when}</span></div><div class="sg-text">${esc(s.text || '')}</div></div>`;
+    }).join('') : '<p class="meta">هنوز پیشنهادی ثبت نشده.</p>';
+  });
+}
+document.getElementById('adminBtn').addEventListener('click', () => {
+  if (localStorage.getItem('arzAdmin') === '1') {
+    document.getElementById('suggestForm').style.display = '';
+    return;
+  }
+  const pin = prompt('رمز مدیر:');
+  if (pin === ADMIN_PIN) {
+    localStorage.setItem('arzAdmin', '1');
+    document.getElementById('suggestForm').style.display = '';
+  } else if (pin !== null) {
+    alert('رمز اشتباهه.');
+  }
+});
+document.getElementById('sgSendBtn').addEventListener('click', () => {
+  const text = document.getElementById('sgText').value.trim();
+  if (!text) return;
+  if (!fbReady) { alert('اتصال به سرور برقرار نیست.'); return; }
+  fbDb.ref('suggestions').push({
+    asset: document.getElementById('sgAsset').value,
+    type: document.getElementById('sgType').value,
+    text,
+    time: firebase.database.ServerValue.TIMESTAMP
+  });
+  document.getElementById('sgText').value = '';
+});
+document.getElementById('navSuggest').addEventListener('click', () => showView('suggest'));
 
 buildSelects();
 ['amount', 'from', 'to'].forEach(id => document.getElementById(id).addEventListener('input', convert));
