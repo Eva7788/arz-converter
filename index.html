@@ -92,6 +92,7 @@
       <h2>🔄 تبدیل‌کننده</h2>
       <label>مقدار</label>
       <input id="amount" type="number" inputmode="decimal" value="1" min="0" step="any">
+      <div id="amountWords" class="meta" style="text-align:right"></div>
       <div class="grid">
         <div>
           <label>از</label>
@@ -104,6 +105,7 @@
       </div>
       <div id="result">—</div>
       <div id="resultFa"></div>
+      <div id="resultWords" class="meta" style="text-align:center"></div>
       <button id="refreshBtn" type="button">🔄 به‌روزرسانی قیمت‌ها</button>
     </div>
 
@@ -298,19 +300,54 @@ function renderFiat() {
       <div class="sub">${sub}</div></div>`;
   }).join('');
 }
+// Number -> Persian words (so big amounts are readable: 50000 -> پنجاه هزار)
+const FA_ONES = ['', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه'];
+const FA_TENS = ['', 'ده', 'بیست', 'سی', 'چهل', 'پنجاه', 'شصت', 'هفتاد', 'هشتاد', 'نود'];
+const FA_TEENS = ['ده', 'یازده', 'دوازده', 'سیزده', 'چهارده', 'پانزده', 'شانزده', 'هفده', 'هجده', 'نوزده'];
+const FA_HUNDREDS = ['', 'صد', 'دویست', 'سیصد', 'چهارصد', 'پانصد', 'ششصد', 'هفتصد', 'هشتصد', 'نهصد'];
+const FA_SCALES = ['', 'هزار', 'میلیون', 'میلیارد', 'تریلیون', 'کوادریلیون'];
+function threeDigitsFa(n) {
+  const h = Math.floor(n / 100), t = n % 100;
+  const parts = [];
+  if (h) parts.push(FA_HUNDREDS[h]);
+  if (t >= 10 && t < 20) parts.push(FA_TEENS[t - 10]);
+  else {
+    const ten = Math.floor(t / 10), one = t % 10;
+    if (ten) parts.push(FA_TENS[ten]);
+    if (one) parts.push(FA_ONES[one]);
+  }
+  return parts.join(' و ');
+}
+function numToFaWords(n) {
+  if (!isFinite(n)) return '';
+  n = Math.floor(Math.abs(n));
+  if (n === 0) return 'صفر';
+  const groups = [];
+  let i = 0;
+  while (n > 0) {
+    const g = n % 1000;
+    if (g) groups.unshift(threeDigitsFa(g) + (FA_SCALES[i] ? ' ' + FA_SCALES[i] : ''));
+    n = Math.floor(n / 1000);
+    i++;
+  }
+  return groups.join(' و ');
+}
 function convert() {
   const amt = parseFloat(document.getElementById('amount').value) || 0;
   const from = document.getElementById('from').value;
   const to = document.getElementById('to').value;
   const a = usdOf(from), b = usdOf(to);
   const out = document.getElementById('result'), outFa = document.getElementById('resultFa');
-  if (a === null || b === null || !amt) { out.textContent = '—'; outFa.textContent = ''; return; }
+  const amtWords = document.getElementById('amountWords'), resWords = document.getElementById('resultWords');
+  amtWords.textContent = amt > 0 ? numToFaWords(amt) : '';
+  if (a === null || b === null || !amt) { out.textContent = '—'; outFa.textContent = ''; resWords.textContent = ''; return; }
   let val = amt * a / b; // value in `to` units; IRR is rial, convert to تومان
   if (to === 'IRR') val = val / 10;
   if (from === 'IRR') { /* amount entered in تومان */ val = amt * 10 * a / b; if (to === 'IRR') val = amt; }
   const toLabel = to === 'IRR' ? 'تومان' : to;
   out.textContent = enNum(val, val < 1 ? 6 : 2) + ' ' + toLabel;
   outFa.textContent = faNum(val, val < 1 ? 6 : 2) + ' ' + toLabel;
+  resWords.textContent = val >= 1 ? numToFaWords(val) + ' ' + toLabel : '';
 }
 function buildSelects() {
   const opts = [
