@@ -110,6 +110,7 @@
     <div id="groupList">
       <h3>گروه‌ها</h3>
       <div id="groups"></div>
+      <p class="meta" id="chatStatus"></p>
     </div>
 
     <div id="room" style="display:none">
@@ -132,6 +133,8 @@
     <button id="navChat" type="button">💬 چت</button>
   </nav>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script>
 const CRYPTOS = [
   { id: 'bitcoin',  fa: 'بیت‌کوین', sym: 'BTC', color: '#f7931a' },
@@ -355,10 +358,27 @@ async function refresh() {
   }
 }
 
-// ---------- Chat ----------
-// Messages are stored in this browser only (localStorage) for now — there is no
-// server yet, so other people cannot see them. A free Firebase database is the
-// next step for real multi-user chat; the storage layer below is ready to swap.
+// ---------- Chat (Firebase Realtime Database — real multi-user chat) ----------
+// Web config for the user's own Firebase project (public client config, meant to
+// ship in the app). Rules are open (.read/.write true) — the chat is public.
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCYIgtIGiRCVe-JFLz7AEweiJJJhC68cMU",
+  authDomain: "arz-chat-de094.firebaseapp.com",
+  databaseURL: "https://arz-chat-de094-default-rtdb.firebaseio.com",
+  projectId: "arz-chat-de094",
+  storageBucket: "arz-chat-de094.firebasestorage.app",
+  messagingSenderId: "560456083669",
+  appId: "1:560456083669:web:e53f5e1e83254c96899a5c"
+};
+let fbDb = null, fbReady = false;
+try {
+  if (window.firebase) {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    fbDb = firebase.database();
+    fbReady = true;
+  }
+} catch (e) { fbReady = false; }
+
 const GROUPS = [
   { id: 'usd',  name: 'گروه دلار',    icon: '🇺🇸' },
   { id: 'eur',  name: 'گروه یورو',    icon: '🇪🇺' },
@@ -369,18 +389,34 @@ const GROUPS = [
 ];
 let myNick = localStorage.getItem('arzNick') || '';
 let currentGroup = null;
+let currentRef = null;
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// Local fallback only (used when Firebase can't load); otherwise messages live in RTDB.
 function getMsgs(gid) {
   try { return JSON.parse(localStorage.getItem('arzChat_' + gid) || '[]'); } catch (e) { return []; }
 }
 function saveMsgs(gid, arr) { localStorage.setItem('arzChat_' + gid, JSON.stringify(arr.slice(-200))); }
+
+function detachListener() {
+  if (currentRef) { currentRef.off('value'); currentRef = null; }
+}
+function attachListener(gid) {
+  detachListener();
+  currentRef = fbDb.ref('chat/' + gid).limitToLast(200);
+  currentRef.on('value', snap => {
+    const val = snap.val() || {};
+    const msgs = Object.values(val).sort((a, b) => (a.time || 0) - (b.time || 0));
+    renderRoom(msgs);
+  });
+}
 
 function showView(v) {
   document.getElementById('view-rates').style.display = v === 'rates' ? '' : 'none';
   document.getElementById('view-chat').style.display = v === 'chat' ? '' : 'none';
   document.getElementById('navRates').classList.toggle('active', v === 'rates');
   document.getElementById('navChat').classList.toggle('active', v === 'chat');
+  if (v === 'rates') detachListener();
   if (v === 'chat') renderChat();
 }
 function renderChat() {
@@ -395,31 +431,38 @@ function renderChat() {
   }
   nickBox.style.display = 'none';
   if (!currentGroup) {
+    detachListener();
     list.style.display = '';
     room.style.display = 'none';
     document.getElementById('groups').innerHTML = GROUPS.map(g => {
-      const n = getMsgs(g.id).length;
+      const n = fbReady ? 0 : getMsgs(g.id).length;
       return `<div class="gcard" data-g="${g.id}"><span class="gicon">${g.icon}</span><span class="gnm">${g.name}<small>${n ? n + ' پیام' : 'گفتگو درباره ' + g.name.replace('گروه ', '')}</small></span><span class="garrow">‹</span></div>`;
     }).join('');
+    document.getElementById('chatStatus').textContent = fbReady ? '' : 'اتصال به چت آنلاین برقرار نشد — پیام‌ها فعلاً فقط روی این گوشی ذخیره می‌شن.';
     document.querySelectorAll('.gcard').forEach(el => el.addEventListener('click', () => openGroup(el.dataset.g)));
   } else {
     list.style.display = 'none';
     room.style.display = '';
-    renderRoom();
+    if (fbReady) {
+      if (!currentRef) attachListener(currentGroup);
+    } else {
+      renderRoom();
+    }
   }
 }
 function openGroup(gid) {
   currentGroup = gid;
   document.getElementById('roomTitle').textContent = GROUPS.find(g => g.id === gid).name;
   document.getElementById('myNick').textContent = myNick;
+  if (fbReady) attachListener(gid);
   renderChat();
 }
-function renderRoom() {
-  const msgs = getMsgs(currentGroup);
+function renderRoom(msgs) {
+  if (msgs === undefined) msgs = getMsgs(currentGroup);
   const box = document.getElementById('messages');
   box.innerHTML = msgs.length ? msgs.map(m => {
     const mine = m.nick === myNick;
-    const t = new Date(m.time);
+    const t = new Date(m.time || Date.now());
     const hh = String(t.getHours()).padStart(2, '0'), mm = String(t.getMinutes()).padStart(2, '0');
     return `<div class="msg ${mine ? 'mine' : ''}"><div class="mnick">${esc(m.nick)} <span>${hh}:${mm}</span></div><div class="mtext">${esc(m.text)}</div></div>`;
   }).join('') : '<p class="meta">هنوز پیامی نیست — اولین پیام رو تو بفرست.</p>';
@@ -429,11 +472,15 @@ function sendMsg() {
   const inp = document.getElementById('msgInput');
   const text = inp.value.trim();
   if (!text || !currentGroup) return;
-  const msgs = getMsgs(currentGroup);
-  msgs.push({ nick: myNick, text, time: Date.now() });
-  saveMsgs(currentGroup, msgs);
+  if (fbReady) {
+    fbDb.ref('chat/' + currentGroup).push({ nick: myNick, text, time: firebase.database.ServerValue.TIMESTAMP });
+  } else {
+    const msgs = getMsgs(currentGroup);
+    msgs.push({ nick: myNick, text, time: Date.now() });
+    saveMsgs(currentGroup, msgs);
+    renderRoom();
+  }
   inp.value = '';
-  renderRoom();
 }
 document.getElementById('nickSaveBtn').addEventListener('click', () => {
   const v = document.getElementById('nickInput').value.trim();
