@@ -592,6 +592,12 @@ function renderRoom(msgs) {
 }
 // Nicknames are the only identity (no accounts): a mute/ban applies to the name.
 const nickKey = n => String(n).replace(/[.$#[\]/]/g, '_');
+function withTimeout(promise, ms, fallback) {
+  return Promise.race([
+    promise,
+    new Promise(res => setTimeout(() => res(fallback), ms))
+  ]);
+}
 async function canChat(nick) {
   if (!fbReady) return { ok: true };
   const [b, m] = await Promise.all([
@@ -608,7 +614,9 @@ async function sendMsg() {
   const text = inp.value.trim();
   if (!text || !currentGroup) return;
   if (fbReady) {
-    const chk = await canChat(myNick);
+    // The mute/ban check must never block sending: if the connection is slow,
+    // give up after 4s and send anyway (fail open).
+    const chk = await withTimeout(canChat(myNick).catch(() => ({ ok: true })), 4000, { ok: true });
     if (!chk.ok) {
       if (chk.why === 'ban') {
         alert('دسترسی شما به چت مسدود شده است.');
