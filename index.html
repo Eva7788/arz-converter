@@ -3,50 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0d1117">
+<meta name="theme-color" content="#f0f0f3">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <title>مبدل ارز</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #0d1117; color: #e6edf3; font-family: Tahoma, 'Segoe UI', sans-serif; padding: 16px; max-width: 560px; margin: 0 auto; }
-  h1 { font-size: 22px; text-align: center; margin: 10px 0 18px; }
-  .grid-coins { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-  .coin { background: #161b22; border: 1px solid #30363d; border-radius: 16px; padding: 14px 12px; text-align: center; }
-  .coin .name { font-size: 14px; color: #c9d1d9; }
-  .coin .sym { font-size: 11px; color: #8b949e; direction: ltr; }
-  .coin .usd { font-size: 19px; font-weight: bold; direction: ltr; margin-top: 8px; }
-  .coin .tmn { font-size: 12px; color: #8b949e; margin-top: 4px; }
-  .card { background: #161b22; border: 1px solid #30363d; border-radius: 16px; padding: 14px; margin-bottom: 12px; }
-  .card h2 { font-size: 15px; margin-bottom: 10px; color: #f0b90b; }
-  .row { display: flex; justify-content: space-between; align-items: center; padding: 9px 2px; border-bottom: 1px solid #21262d; font-size: 15px; }
-  .row:last-child { border-bottom: none; }
-  .row .name { color: #c9d1d9; }
-  .row .price { font-weight: bold; direction: ltr; text-align: left; }
-  label { display: block; font-size: 13px; color: #8b949e; margin: 8px 0 4px; }
-  input, select { width: 100%; background: #0d1117; color: #e6edf3; border: 1px solid #30363d; border-radius: 8px; padding: 11px; font-size: 16px; font-family: inherit; }
+  body { background: #f0f0f3; color: #1c1c1e; font-family: Tahoma, 'Segoe UI', sans-serif; padding: 14px; max-width: 560px; margin: 0 auto; }
+  h1 { font-size: 20px; text-align: center; margin: 8px 0 14px; }
+  h3 { font-size: 13px; color: #8a8a8e; margin: 4px 2px 8px; }
+  .grid-coins { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .coin { background: #fff; border-radius: 18px; padding: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .coin .top { display: flex; align-items: center; gap: 8px; }
+  .coin .badge { width: 38px; height: 38px; border-radius: 50%; color: #fff; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-shrink: 0; direction: ltr; }
+  .coin .flag { font-size: 30px; line-height: 1; flex-shrink: 0; }
+  .coin .nm { font-size: 14px; font-weight: bold; }
+  .coin .nm small { display: block; font-size: 11px; font-weight: normal; color: #8a8a8e; direction: ltr; text-align: right; }
+  .coin .chg { font-size: 12px; min-height: 18px; margin-top: 8px; direction: ltr; text-align: left; }
+  .coin .chg.up { color: #34c759; }
+  .coin .chg.down { color: #ff3b30; }
+  .coin .big { font-size: 20px; font-weight: bold; direction: ltr; text-align: left; margin-top: 2px; }
+  .coin .sub { font-size: 11px; color: #8a8a8e; margin-top: 3px; min-height: 15px; }
+  .card { background: #fff; border-radius: 18px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .card h2 { font-size: 15px; margin-bottom: 10px; }
+  label { display: block; font-size: 13px; color: #8a8a8e; margin: 8px 0 4px; }
+  input, select { width: 100%; background: #f2f2f7; color: #1c1c1e; border: 1px solid #e5e5ea; border-radius: 10px; padding: 11px; font-size: 16px; font-family: inherit; }
   input:focus, select:focus { outline: none; border-color: #f0b90b; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   #result { font-size: 22px; font-weight: bold; text-align: center; padding: 14px 6px 4px; direction: ltr; }
-  #resultFa { font-size: 14px; color: #8b949e; text-align: center; padding-bottom: 6px; }
-  button { width: 100%; background: #f0b90b; color: #111; border: none; border-radius: 8px; padding: 12px; font-size: 15px; font-weight: bold; font-family: inherit; cursor: pointer; margin-top: 10px; }
+  #resultFa { font-size: 14px; color: #8a8a8e; text-align: center; padding-bottom: 6px; }
+  button { width: 100%; background: #f0b90b; color: #111; border: none; border-radius: 10px; padding: 12px; font-size: 15px; font-weight: bold; font-family: inherit; cursor: pointer; margin-top: 10px; }
   button:active { opacity: .8; }
-  .meta { text-align: center; color: #8b949e; font-size: 11px; line-height: 1.8; margin-top: 12px; }
-  .err { color: #ff7b72; text-align: center; font-size: 12px; padding: 6px; }
+  .meta { text-align: center; color: #8a8a8e; font-size: 11px; line-height: 1.8; margin-top: 12px; }
+  .err { color: #ff3b30; text-align: center; font-size: 12px; padding: 6px; grid-column: 1 / -1; }
 </style>
 </head>
 <body>
   <h1>💱 مبدل ارز</h1>
 
+  <h3>ارز دیجیتال</h3>
   <div class="grid-coins" id="crypto"><p class="err">در حال دریافت قیمت‌ها…</p></div>
 
-  <div class="card">
-    <h2>💵 فیات (هر ۱ دلار = …)</h2>
-    <div id="fiat"><p class="err">در حال دریافت نرخ‌ها…</p></div>
-  </div>
+  <h3>فیات</h3>
+  <div class="grid-coins" id="fiat"><p class="err">در حال دریافت نرخ‌ها…</p></div>
 
   <div class="card">
     <h2>🔄 تبدیل‌کننده</h2>
@@ -71,25 +73,43 @@
 
 <script>
 const CRYPTOS = [
-  { id: 'bitcoin',  fa: 'بیت‌کوین', sym: 'BTC' },
-  { id: 'ethereum', fa: 'اتریوم',   sym: 'ETH' },
-  { id: 'tether',   fa: 'تتر',     sym: 'USDT' },
-  { id: 'binancecoin', fa: 'بایننس‌کوین', sym: 'BNB' },
-  { id: 'solana',   fa: 'سولانا',  sym: 'SOL' },
-  { id: 'tron',     fa: 'ترون',    sym: 'TRX' },
-  { id: 'dogecoin', fa: 'دوج‌کوین', sym: 'DOGE' },
+  { id: 'bitcoin',  fa: 'بیت‌کوین', sym: 'BTC', color: '#f7931a' },
+  { id: 'ethereum', fa: 'اتریوم',   sym: 'ETH', color: '#627eea' },
+  { id: 'tether',   fa: 'تتر',     sym: 'USDT', color: '#26a17b' },
+  { id: 'binancecoin', fa: 'بایننس‌کوین', sym: 'BNB', color: '#d9a400' },
+  { id: 'solana',   fa: 'سولانا',  sym: 'SOL', color: '#9945ff' },
+  { id: 'tron',     fa: 'ترون',    sym: 'TRX', color: '#ff0013' },
+  { id: 'dogecoin', fa: 'دوج‌کوین', sym: 'DOGE', color: '#c2a633' },
+  { id: 'ripple',   fa: 'ریپل',    sym: 'XRP', color: '#23292f' },
+  { id: 'cardano',  fa: 'کاردانو', sym: 'ADA', color: '#0033ad' },
+  { id: 'litecoin', fa: 'لایت‌کوین', sym: 'LTC', color: '#345d9d' },
+  { id: 'avalanche-2', fa: 'آوالانچ', sym: 'AVAX', color: '#e84142' },
+  { id: 'chainlink', fa: 'چین‌لینک', sym: 'LINK', color: '#2a5ada' },
+  { id: 'polkadot', fa: 'پولکادات', sym: 'DOT', color: '#e6007a' },
+  { id: 'the-open-network', fa: 'تون‌کوین', sym: 'TON', color: '#0098ea' },
+  { id: 'shiba-inu', fa: 'شیبا',   sym: 'SHIB', color: '#e07840' },
 ];
 const FIATS = [
-  { code: 'USD', fa: 'دلار آمریکا' },
-  { code: 'EUR', fa: 'یورو' },
-  { code: 'GBP', fa: 'پوند' },
-  { code: 'AED', fa: 'درهم امارات' },
-  { code: 'TRY', fa: 'لیر ترکیه' },
-  { code: 'IRR', fa: 'تومان' },
+  { code: 'USD', fa: 'دلار آمریکا', flag: '🇺🇸' },
+  { code: 'EUR', fa: 'یورو', flag: '🇪🇺' },
+  { code: 'GBP', fa: 'پوند', flag: '🇬🇧' },
+  { code: 'AED', fa: 'درهم امارات', flag: '🇦🇪' },
+  { code: 'TRY', fa: 'لیر ترکیه', flag: '🇹🇷' },
+  { code: 'JPY', fa: 'ین ژاپن', flag: '🇯🇵' },
+  { code: 'CNY', fa: 'یوان چین', flag: '🇨🇳' },
+  { code: 'CHF', fa: 'فرانک سوئیس', flag: '🇨🇭' },
+  { code: 'CAD', fa: 'دلار کانادا', flag: '🇨🇦' },
+  { code: 'AUD', fa: 'دلار استرالیا', flag: '🇦🇺' },
+  { code: 'SAR', fa: 'ریال عربستان', flag: '🇸🇦' },
+  { code: 'IQD', fa: 'دینار عراق', flag: '🇮🇶' },
+  { code: 'AFN', fa: 'افغانی', flag: '🇦🇫' },
+  { code: 'IRR', fa: 'تومان', flag: '🇮🇷' },
 ];
 // prices in USD per 1 unit; fiat rates: units per 1 USD (IRR stored per USD, shown as تومان = IRR/10)
 let usdPrice = {};   // crypto symbol -> USD
 let fiatPerUsd = {}; // fiat code -> per USD (IRR raw rial)
+let change24 = {};   // crypto symbol -> 24h % change
+let fiatChange = {}; // fiat code -> 24h % change of its Toman price
 let lastUpdate = null;
 
 const faNum = (n, d=2) => Number(n).toLocaleString('fa-IR', { maximumFractionDigits: d });
@@ -101,24 +121,40 @@ function usdOf(code) {
   if (fiatPerUsd[code]) return 1 / fiatPerUsd[code];
   return null;
 }
+function chgHtml(v) {
+  if (v === undefined || v === null || isNaN(v)) return '<div class="chg">&nbsp;</div>';
+  const up = v >= 0;
+  return `<div class="chg ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${Math.abs(v).toFixed(2)}%</div>`;
+}
 function renderCrypto() {
   const c = document.getElementById('crypto');
   c.innerHTML = CRYPTOS.map(x => {
     const p = usdPrice[x.sym];
     const toman = p && fiatPerUsd.IRR ? p * fiatPerUsd.IRR / 10 : null;
-    return `<div class="coin"><div class="name">${x.fa}</div><div class="sym">${x.sym}</div>
-      <div class="usd">${p ? '$' + enNum(p, p < 1 ? 4 : 2) : '—'}</div>
-      ${toman ? `<div class="tmn">≈ ${faNum(toman, 0)} تومان</div>` : ''}</div>`;
+    return `<div class="coin"><div class="top"><span class="badge" style="background:${x.color}">${x.sym}</span><span class="nm">${x.fa}<small>${x.sym}</small></span></div>
+      ${chgHtml(change24[x.sym])}
+      <div class="big">${p ? '$' + enNum(p, p < 1 ? 4 : 2) : '—'}</div>
+      ${toman ? `<div class="sub">≈ ${faNum(toman, 0)} تومان</div>` : '<div class="sub">&nbsp;</div>'}</div>`;
   }).join('');
+}
+function tomanPerUnit(code) {
+  if (!fiatPerUsd.IRR) return null;
+  if (code === 'USD') return fiatPerUsd.IRR / 10;
+  const r = fiatPerUsd[code];
+  if (!r) return null;
+  return (1 / r) * fiatPerUsd.IRR / 10;
 }
 function renderFiat() {
   const f = document.getElementById('fiat');
-  f.innerHTML = FIATS.filter(x => x.code !== 'USD').map(x => {
+  // IRR card would be identical to the USD card (same rate), so it is left out of the grid.
+  f.innerHTML = FIATS.filter(x => x.code !== 'IRR').map(x => {
+    const t = tomanPerUnit(x.code);
     const r = fiatPerUsd[x.code];
-    const shown = x.code === 'IRR' ? (r ? r / 10 : null) : r;
-    const unit = x.code === 'IRR' ? 'تومان' : x.code;
-    return `<div class="row"><span class="name">${x.fa}</span>
-      <span class="price">${shown ? enNum(shown, shown < 10 ? 4 : 0) + ' ' + unit : '—'}</span></div>`;
+    const sub = x.code === 'USD' ? '&nbsp;' : (r ? `۱ دلار = ${faNum(r, r < 10 ? 4 : 0)} ${x.code}` : '&nbsp;');
+    return `<div class="coin"><div class="top"><span class="flag">${x.flag}</span><span class="nm">${x.fa}<small>${x.code}</small></span></div>
+      ${chgHtml(fiatChange[x.code])}
+      <div class="big">${t ? faNum(t, 0) + ' تومان' : '—'}</div>
+      <div class="sub">${sub}</div></div>`;
   }).join('');
 }
 function convert() {
@@ -157,16 +193,16 @@ async function fetchJSON(url, ms = 10000) {
 // Crypto: CoinGecko -> CoinLore -> Nobitex (Iranian exchange, reachable without VPN).
 async function loadCrypto() {
   try {
-    const cg = await fetchJSON('https://api.coingecko.com/api/v3/simple/price?ids=' + CRYPTOS.map(c => c.id).join(',') + '&vs_currencies=usd');
+    const cg = await fetchJSON('https://api.coingecko.com/api/v3/simple/price?ids=' + CRYPTOS.map(c => c.id).join(',') + '&vs_currencies=usd&include_24hr_change=true');
     let ok = false;
-    CRYPTOS.forEach(x => { if (cg[x.id] && cg[x.id].usd) { usdPrice[x.sym] = cg[x.id].usd; ok = true; } });
+    CRYPTOS.forEach(x => { if (cg[x.id] && cg[x.id].usd) { usdPrice[x.sym] = cg[x.id].usd; if (cg[x.id].usd_24h_change !== undefined) change24[x.sym] = cg[x.id].usd_24h_change; ok = true; } });
     if (ok) return 'CoinGecko';
     throw new Error('empty');
   } catch (e) { /* fall through */ }
   try {
-    const cl = await fetchJSON('https://api.coinlore.net/api/tickers/?start=0&limit=20');
+    const cl = await fetchJSON('https://api.coinlore.net/api/tickers/?start=0&limit=30');
     let ok = false;
-    (cl.data || []).forEach(x => { if (x.symbol && x.price_usd) { usdPrice[x.symbol] = parseFloat(x.price_usd); ok = true; } });
+    (cl.data || []).forEach(x => { if (x.symbol && x.price_usd) { usdPrice[x.symbol] = parseFloat(x.price_usd); if (x.percent_change_24h) change24[x.symbol] = parseFloat(x.percent_change_24h); ok = true; } });
     if (ok) return 'CoinLore';
     throw new Error('empty');
   } catch (e) { /* fall through */ }
@@ -216,12 +252,32 @@ async function loadFiat() {
   }
   throw new Error('all fiat sources failed');
 }
+// Best-effort 24h change for fiat cards: jsDelivr today vs yesterday (same provider, so the move is comparable).
+async function updateFiatChange() {
+  try {
+    const y = new Date(Date.now() - 86400000);
+    const ds = y.toISOString().slice(0, 10);
+    const [today, yest] = await Promise.all([
+      fetchJSON('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json'),
+      fetchJSON('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@' + ds + '/v1/currencies/usd.json'),
+    ]);
+    const t = today.usd || {}, yy = yest.usd || {};
+    FIATS.forEach(x => {
+      const a = t[x.code.toLowerCase()], b = yy[x.code.toLowerCase()];
+      if (!a || !b) return;
+      // Toman price of 1 unit is (1/rate) * IRR/10, so its % move is (b/a - 1); IRR itself moves directly.
+      fiatChange[x.code] = x.code === 'IRR' ? (a - b) / b * 100 : (b / a - 1) * 100;
+    });
+    if (t.irr && yy.irr) fiatChange.USD = (t.irr - yy.irr) / yy.irr * 100;
+    renderFiat();
+  } catch (e) { /* no % for fiat */ }
+}
 async function refresh() {
   const box = document.getElementById('crypto'), fbox = document.getElementById('fiat');
   const [cRes, fRes] = await Promise.allSettled([loadCrypto(), loadFiat()]);
   if (cRes.status === 'fulfilled') renderCrypto();
   else box.innerHTML = '<p class="err">خطا در دریافت قیمت کریپتو — اینترنت را چک کن و «به‌روزرسانی» را بزن.</p>';
-  if (fRes.status === 'fulfilled') renderFiat();
+  if (fRes.status === 'fulfilled') { renderFiat(); updateFiatChange(); }
   else fbox.innerHTML = '<p class="err">خطا در دریافت نرخ فیات.</p>';
   if (cRes.status === 'fulfilled' || fRes.status === 'fulfilled') {
     localStorage.setItem('arzCache', JSON.stringify({ usdPrice, fiatPerUsd, lastUpdate }));
